@@ -63,6 +63,10 @@ jobs:
         # vCPUs across 5 packages' test tasks running at once — same
         # contention issue typecheck.yml already caps for tsgo.
         run: GITHUB_ACTIONS=false bun turbo test --concurrency=4
+      
+      - name: Run mergeJsonRecords tests
+        working-directory: packages/llm
+        run: bun test test/schema.test.ts
 
       - name: Check generated client
         timeout-minutes: 5
