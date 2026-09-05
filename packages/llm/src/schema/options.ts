@@ -3,19 +3,46 @@ import { JsonSchema, ModelID, ProviderID } from "./ids"
 import type { AnyRoute } from "../route/client"
 import { isRecord } from "../utils/record"
 
-export const mergeJsonRecords = (
+const mergeJsonRecordValue = (current: unknown, next: unknown): unknown => {
+  if (isRecord(current) && isRecord(next)){
+    return mergeJsonRecords(current, next)
+  }
+
+  return next
+}
+
+const mergeJsonRecordInto = (
+  result: Record<string, unknown>,
+  item: Record<string, unknown>,
+):void =>  {
+  for (const [key, value] of Object.entries(item)){
+    if (value === undefined) continue
+    result[key] = mergeJsonRecordValue(result[key], value)
+  }
+}
+
+
+export const  mergeJsonRecords = (
   ...items: ReadonlyArray<Record<string, unknown> | undefined>
 ): Record<string, unknown> | undefined => {
-  const defined = items.filter((item): item is Record<string, unknown> => item !== undefined)
+  const defined = items.filter(
+    (item): item is Record<string, unknown> => item !== undefined,
+  )
+
   if (defined.length === 0) return undefined
-  if (defined.length === 1 && Object.values(defined[0]).every((value) => value !== undefined)) return defined[0]
-  const result: Record<string, unknown> = {}
-  for (const item of defined) {
-    for (const [key, value] of Object.entries(item)) {
-      if (value === undefined) continue
-      result[key] = isRecord(result[key]) && isRecord(value) ? mergeJsonRecords(result[key], value) : value
+
+  if (defined.length === 1 && 
+      Object.values(defined[0]).every((value) => value !== undefined)
+    ) {
+        return defined[0]
     }
+
+  const result: Record<string, unknown> = {}
+
+  for (const item of defined) {
+    mergeJsonRecordInto(result, item)
   }
+
   return Object.keys(result).length === 0 ? undefined : result
 }
 
