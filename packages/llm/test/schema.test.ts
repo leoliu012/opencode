@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test"
 import { Schema } from "effect"
 import * as OpenAIChat from "../src/protocols/openai-chat"
 import * as OpenAIResponses from "../src/protocols/openai-responses"
-import { ContentPart, LLMEvent, LLMRequest, Model, ModelID, ProviderID, Usage } from "../src/schema"
+import { ContentPart, LLMEvent, LLMRequest, Model, ModelID, ProviderID, Usage, mergeJsonRecords} from "../src/schema"
 import { ProviderShared } from "../src/protocols/shared"
 
 const model = new Model({
@@ -55,6 +55,39 @@ describe("llm schema", () => {
   test("content part tagged union exposes guards", () => {
     expect(ContentPart.guards.text({ type: "text", text: "hi" })).toBe(true)
     expect(ContentPart.guards.media({ type: "text", text: "hi" })).toBe(false)
+  })
+})
+
+
+describe("mergeJsonRecords", () =>{
+  test("returns undefined when all inputs are undefined", () => {
+    expect(mergeJsonRecords(undefined, undefined)).toBeUndefined()
+  })
+
+  test("returns a single defined record unchanged", ()=>{
+    const input = {a:1, b: "test"}
+
+    expect(mergeJsonRecords(input)).toBe(input)
+  })
+
+  test("recursively merges nested records", () => {
+    expect(
+      mergeJsonRecords(
+        { config: { a: 1 } },
+        { config: { b: 2 } },
+      ),
+    ).toEqual({
+      config: {
+        a: 1,
+        b: 2,
+      },
+    })
+  })
+
+  test("ignores undefined values when merging", () => {
+    expect(mergeJsonRecords({ a: 1 }, { a: undefined })).toEqual({
+      a: 1,
+    })
   })
 })
 
